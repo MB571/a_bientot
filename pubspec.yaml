@@ -1,0 +1,48 @@
+name: a_bientot
+description: A new Flutter project.
+publish_to: 'none' # Remove this line if you plan to publish
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+
+  # Firebase core
+  firebase_core: ^2.24.2
+
+  # Firebase authentication
+  firebase_auth: ^4.17.5
+
+  # Firestore
+  cloud_firestore: ^4.15.5
+  # Cloud storage
+  cloud_functions: ^4.7.6
+
+
+  # Algolia
+  algolia: ^1.1.1
+  # State management
+  provider: ^6.1.1
+  
+
+  # iOS-style icons
+  cupertino_icons: ^1.0.2
+  flutter_typeahead: ^5.2.0
+  intl: ^0.20.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/images/logos/
+    - assets/data/airports.json
+    - assets/data/airlines.json
