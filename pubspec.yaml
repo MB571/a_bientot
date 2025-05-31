@@ -1,6 +1,6 @@
 name: a_bientot
-description: A new Flutter project.
-publish_to: 'none' # Remove this line if you plan to publish
+description: A smart travel deal planner.
+publish_to: 'none' # Remove if publishing to pub.dev
 version: 1.0.0+1
 
 environment:
@@ -10,29 +10,25 @@ dependencies:
   flutter:
     sdk: flutter
 
-
-  # Firebase core
-  firebase_core: ^2.24.2
-
-  # Firebase authentication
+  # Firebase (Dart 3 compatible, Web support)
+  firebase_core: ^2.27.0
   firebase_auth: ^4.17.5
-
-  # Firestore
   cloud_firestore: ^4.15.5
-  # Cloud storage
   cloud_functions: ^4.7.6
-
-
-  # Algolia
-  algolia: ^1.1.1
-  # State management
+  flutter_local_notifications: ^16.0.0
+  # UI & state
   provider: ^6.1.1
-  
-
-  # iOS-style icons
   cupertino_icons: ^1.0.2
   flutter_typeahead: ^5.2.0
   intl: ^0.20.2
+
+  http: ^0.13.5
+  shared_preferences: ^2.2.2
+  # Search
+  algolia: ^1.1.1
+
+  # Optional: keyboard visibility if still needed
+  flutter_keyboard_visibility: ^6.0.0
 
 dev_dependencies:
   flutter_test:

@@ -4,8 +4,8 @@ import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../models/trip_model.dart';
-import '../providers/trip_provider.dart';
 import '../services/data_service.dart';
+import '../services/flight_checker.dart';
 
 class NewTripFormPage extends StatefulWidget {
   const NewTripFormPage({super.key});
@@ -14,6 +14,7 @@ class NewTripFormPage extends StatefulWidget {
   State<NewTripFormPage> createState() => _NewTripFormPageState();
 }
 
+// Updated _NewTripFormPageState class (replace your existing one)
 class _NewTripFormPageState extends State<NewTripFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _fromController = TextEditingController();
@@ -40,6 +41,9 @@ class _NewTripFormPageState extends State<NewTripFormPage> {
     18,
     (i) => DateTime(DateTime.now().year, DateTime.now().month + i, 1),
   );
+
+  // New dropdown options for date flexibility
+  final List<int> flexibilityOptions = [0, 1, 2, 3, 4, 5];
 
   Future<void> _selectDateRange(BuildContext context) async {
     final picked = await showDateRangePicker(
@@ -108,15 +112,18 @@ class _NewTripFormPageState extends State<NewTripFormPage> {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 8,
-              mainAxisSpacing: 8,
-              childAspectRatio: 2.5,
+              crossAxisCount: 6, // Changed from 3 to 6 for smaller containers
+              crossAxisSpacing: 4,
+              mainAxisSpacing: 4,
+              childAspectRatio: 1.5, // More square aspect ratio
             ),
             itemBuilder: (context, index) {
               final month = months[index];
               final isSelected = month == startMonth || month == endMonth;
               final inRange = _isMonthInRange(month);
+
+              // Hide month if it's in range and not an endpoint
+              if (inRange && !isSelected) return const SizedBox.shrink();
 
               return GestureDetector(
                 onTap: () => _onMonthTapped(month),
@@ -128,19 +135,19 @@ class _NewTripFormPageState extends State<NewTripFormPage> {
                             ? Colors.blue.shade100
                             : Colors.grey.shade200,
                     border: Border.all(color: Colors.black26),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(4),
                   ),
                   alignment: Alignment.center,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
                   child: Text(
-                    DateFormat.MMMM().format(month),
-                    style: const TextStyle(fontSize: 14),
+                    DateFormat.MMM().format(
+                        month), // Changed to MMM for shorter month names
+                    style: const TextStyle(fontSize: 12),
                   ),
                 ),
               );
             },
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
         ],
       );
     }).toList();
@@ -175,45 +182,45 @@ class _NewTripFormPageState extends State<NewTripFormPage> {
                 child: Column(
                   children: [
                     const SizedBox(height: 80),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: _whiteCard(
-                            child: _buildTypeAheadField(
-                              label: "From",
-                              controller: _fromController,
-                              onSelected: (code) => fromCode = code,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _whiteCard(
-                            child: _buildTypeAheadField(
-                              label: "To",
-                              controller: _toController,
-                              onSelected: (code) => toCode = code,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        _whiteCard(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 4),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
+
+                    // Combined From/To/One Way container
+                    _whiteCard(
+                      child: Column(
+                        children: [
+                          Row(
                             children: [
-                              Checkbox(
-                                value: returnFlight,
-                                onChanged: (val) =>
-                                    setState(() => returnFlight = val ?? true),
+                              Expanded(
+                                child: _buildTypeAheadField(
+                                  label: "From",
+                                  controller: _fromController,
+                                  onSelected: (code) => fromCode = code,
+                                ),
                               ),
-                              const Text("Return?"),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: _buildTypeAheadField(
+                                  label: "To",
+                                  controller: _toController,
+                                  onSelected: (code) => toCode = code,
+                                ),
+                              ),
                             ],
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              const Text("One Way?"),
+                              Switch(
+                                value: returnFlight,
+                                onChanged: (val) {
+                                  setState(() => returnFlight = val);
+                                },
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 12),
 
@@ -262,19 +269,33 @@ class _NewTripFormPageState extends State<NewTripFormPage> {
                               child: const Text("Select Date Range"),
                             ),
                             if (startDate != null && endDate != null)
-                              Text(
-                                  "From ${_formatDate(startDate!)} to ${_formatDate(endDate!)}"),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  "From ${_formatDate(startDate!)} to ${_formatDate(endDate!)}",
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                              ),
                             if (tripTiming == 'Exact Dates') ...[
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 12),
                               const Text("Allow ± extra days"),
-                              Slider(
-                                value: dateFlexibility.toDouble(),
-                                min: 0,
-                                max: 5,
-                                divisions: 5,
-                                label: "$dateFlexibility days",
-                                onChanged: (val) => setState(
-                                    () => dateFlexibility = val.toInt()),
+                              DropdownButtonFormField<int>(
+                                value: dateFlexibility,
+                                items: flexibilityOptions.map((value) {
+                                  return DropdownMenuItem<int>(
+                                    value: value,
+                                    child: Text(
+                                        "$value day${value == 1 ? '' : 's'}"),
+                                  );
+                                }).toList(),
+                                onChanged: (val) =>
+                                    setState(() => dateFlexibility = val ?? 0),
+                                decoration: const InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.symmetric(
+                                      vertical: 8, horizontal: 12),
+                                ),
                               ),
                             ]
                           ],
@@ -284,7 +305,8 @@ class _NewTripFormPageState extends State<NewTripFormPage> {
                       ),
                     ),
 
-                    if (tripTiming != 'Exact Dates')
+                    // Rest of your existing code remains the same...
+                    if (tripTiming != 'Exact Dates' && !returnFlight)
                       _whiteCard(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -354,6 +376,9 @@ class _NewTripFormPageState extends State<NewTripFormPage> {
                         decoration: const InputDecoration(
                           labelText: 'Budget (£)',
                           border: OutlineInputBorder(),
+                          isDense: true,
+                          contentPadding: EdgeInsets.symmetric(
+                              vertical: 12, horizontal: 12),
                         ),
                         keyboardType: TextInputType.number,
                         validator: (val) => (val == null || val.isEmpty)
@@ -387,7 +412,7 @@ class _NewTripFormPageState extends State<NewTripFormPage> {
                             stayFlexibility: stayFlexibility.toDouble(),
                           );
 
-                          Provider.of<TripProvider>(context, listen: false)
+                          Provider.of<FlightChecker>(context, listen: false)
                               .addTrip(trip);
 
                           await FirebaseFirestore.instance
@@ -425,12 +450,14 @@ class _NewTripFormPageState extends State<NewTripFormPage> {
     );
   }
 
+  // Rest of your helper methods remain the same...
   Widget _buildTypeAheadField({
     required String label,
     required TextEditingController controller,
     required Function(String code) onSelected,
   }) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -453,6 +480,9 @@ class _NewTripFormPageState extends State<NewTripFormPage> {
               decoration: const InputDecoration(
                 hintText: "Type city, country, or airport",
                 border: OutlineInputBorder(),
+                isDense: true,
+                contentPadding:
+                    EdgeInsets.symmetric(vertical: 12, horizontal: 12),
               ),
               validator: (val) =>
                   (val == null || val.isEmpty) ? "Required" : null,
